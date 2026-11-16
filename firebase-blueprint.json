@@ -1,0 +1,290 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Profil pengguna sistem supervisi akademik (Admin atau Guru) di SMKN 13 Bandung",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Auth UID",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "username": {
+          "type": "string",
+          "description": "Username unik untuk login (mendukung simbol @)",
+          "maxLength": 120,
+          "pattern": "^[a-z0-9._@-]+$"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Identifier email internal Firebase Auth atau email Google admin utama",
+          "maxLength": 200
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Nama lengkap guru atau admin",
+          "maxLength": 150
+        },
+        "role": {
+          "type": "string",
+          "enum": ["admin", "guru"],
+          "description": "Peran akses pengguna dalam aplikasi"
+        },
+        "nip": {
+          "type": "string",
+          "description": "NIP atau NIPPPK guru/supervisor",
+          "maxLength": 50
+        },
+        "mataPelajaran": {
+          "type": "string",
+          "description": "Mata pelajaran yang diampu",
+          "maxLength": 150
+        },
+        "konsentrasiKeahlian": {
+          "type": "string",
+          "description": "Konsentrasi keahlian di SMKN 13 Bandung",
+          "maxLength": 150
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "URL foto profil",
+          "maxLength": 500
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "email", "displayName", "role", "createdAt", "updatedAt"]
+    },
+    "AdminRecord": {
+      "title": "AdminRecord",
+      "description": "Dokumen penanda hak akses Administrator/Supervisor",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "maxLength": 200
+        },
+        "grantedBy": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "email", "grantedBy", "createdAt"]
+    },
+    "TeacherDirectoryEntry": {
+      "title": "TeacherDirectoryEntry",
+      "description": "Direktori guru non-PII untuk pilihan Observant pada Form 1 oleh Admin maupun Observer",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "username": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "displayName": {
+          "type": "string",
+          "maxLength": 150
+        },
+        "role": {
+          "type": "string",
+          "enum": ["admin", "guru"]
+        },
+        "nip": {
+          "type": "string",
+          "maxLength": 50
+        },
+        "mataPelajaran": {
+          "type": "string",
+          "maxLength": 150
+        },
+        "konsentrasiKeahlian": {
+          "type": "string",
+          "maxLength": 150
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "displayName", "role", "updatedAt"]
+    },
+    "SupervisionRecord": {
+      "title": "SupervisionRecord",
+      "description": "Dokumen lengkap Instrumen Supervisi Akademik Berbasis Lesson Study (Form 1 s.d. Form 13)",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "createdByUid": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "teacherUid": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "teacherUsername": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "teacherEmail": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "teacherName": {
+          "type": "string",
+          "maxLength": 150
+        },
+        "teacherNip": {
+          "type": "string",
+          "maxLength": 50
+        },
+        "mataPelajaran": {
+          "type": "string",
+          "maxLength": 150
+        },
+        "konsentrasiKeahlian": {
+          "type": "string",
+          "maxLength": 150
+        },
+        "kelasSemester": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "tanggal": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "tahap": {
+          "type": "string",
+          "enum": ["PLAN", "DO", "SEE"]
+        },
+        "status": {
+          "type": "string",
+          "enum": ["draft", "in_progress", "finalized"]
+        },
+        "totalNilai": {
+          "type": "number"
+        },
+        "kategori": {
+          "type": "string",
+          "enum": ["Sangat Baik", "Baik", "Cukup", "Perlu Perbaikan"]
+        },
+        "form1": {
+          "type": "object"
+        },
+        "form2": {
+          "type": "object"
+        },
+        "form3": {
+          "type": "object"
+        },
+        "form4": {
+          "type": "object"
+        },
+        "form5": {
+          "type": "object"
+        },
+        "form6": {
+          "type": "object"
+        },
+        "form7": {
+          "type": "object"
+        },
+        "form8": {
+          "type": "object"
+        },
+        "form9": {
+          "type": "object"
+        },
+        "form10": {
+          "type": "object"
+        },
+        "form12": {
+          "type": "object"
+        },
+        "form13": {
+          "type": "object"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "createdByUid",
+        "teacherEmail",
+        "teacherName",
+        "mataPelajaran",
+        "tahap",
+        "status",
+        "totalNilai",
+        "kategori",
+        "form1",
+        "form2",
+        "form3",
+        "form4",
+        "form5",
+        "form6",
+        "form7",
+        "form8",
+        "form9",
+        "form10",
+        "form12",
+        "form13",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Profil akun username/password pengguna (Admin dan Guru)"
+    },
+    "/admins/{userId}": {
+      "schema": { "$ref": "#/entities/AdminRecord" },
+      "description": "Daftar UID administrator/supervisor terpercaya"
+    },
+    "/teacher_directory/{userId}": {
+      "schema": { "$ref": "#/entities/TeacherDirectoryEntry" },
+      "description": "Direktori guru non-PII yang dapat dibaca seluruh akun untuk pemilihan Observant pada Form 1"
+    },
+    "/supervisions/{supervisionId}": {
+      "schema": { "$ref": "#/entities/SupervisionRecord" },
+      "description": "Dokumen lengkap instrumen supervisi akademik berbasis Lesson Study SMKN 13 Bandung"
+    }
+  }
+}

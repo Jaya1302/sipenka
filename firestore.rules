@@ -1,0 +1,270 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Pillar 0: Default-deny global safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helper Primitives ---
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isBootstrapAdmin() {
+      return isSignedIn() &&
+        request.auth.token.email == 'sumpena.jaya@gmail.com' &&
+        request.auth.token.email_verified == true;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        isBootstrapAdmin() ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // --- Validation Blueprints ---
+    function isValidUser(data, userId) {
+      return data.keys().hasAll(['uid', 'email', 'displayName', 'role', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly([
+          'uid', 'username', 'email', 'displayName', 'role', 'nip',
+          'mataPelajaran', 'konsentrasiKeahlian', 'photoURL',
+          'createdAt', 'updatedAt'
+        ]) &&
+        data.uid is string && data.uid == userId && data.uid.size() <= 128 &&
+        (!('username' in data) || (data.username is string && data.username.size() <= 120)) &&
+        data.email is string && data.email.size() >= 3 && data.email.size() <= 200 &&
+        data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 150 &&
+        data.role in ['admin', 'guru'] &&
+        (!('nip' in data) || (data.nip is string && data.nip.size() <= 50)) &&
+        (!('mataPelajaran' in data) || (data.mataPelajaran is string && data.mataPelajaran.size() <= 150)) &&
+        (!('konsentrasiKeahlian' in data) || (data.konsentrasiKeahlian is string && data.konsentrasiKeahlian.size() <= 150)) &&
+        (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 500)) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidAdminRecord(data, userId) {
+      return data.keys().hasAll(['uid', 'email', 'grantedBy', 'createdAt']) &&
+        data.keys().hasOnly(['uid', 'email', 'grantedBy', 'createdAt']) &&
+        data.uid is string && data.uid == userId && data.uid.size() <= 128 &&
+        data.email is string && data.email.size() >= 3 && data.email.size() <= 200 &&
+        data.grantedBy is string && data.grantedBy.size() >= 1 && data.grantedBy.size() <= 128 &&
+        data.createdAt is timestamp;
+    }
+
+    function isValidSupervision(data, supervisionId) {
+      return data.keys().hasAll([
+          'id', 'createdByUid', 'teacherEmail', 'teacherName',
+          'mataPelajaran', 'tahap', 'status', 'totalNilai', 'kategori',
+          'form1', 'form2', 'form3', 'form4', 'form5', 'form6',
+          'form7', 'form8', 'form9', 'form10', 'form12', 'form13',
+          'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id', 'createdByUid', 'teacherUid', 'teacherUsername', 'teacherEmail', 'teacherName',
+          'teacherNip', 'mataPelajaran', 'konsentrasiKeahlian',
+          'kelasSemester', 'tanggal', 'tahap', 'status', 'totalNilai', 'kategori',
+          'form1', 'form2', 'form3', 'form4', 'form5', 'form6',
+          'form7', 'form8', 'form9', 'form10', 'form12', 'form13',
+          'createdAt', 'updatedAt'
+        ]) &&
+        data.id is string && data.id == supervisionId && data.id.size() <= 128 &&
+        data.createdByUid is string && data.createdByUid.size() >= 1 && data.createdByUid.size() <= 128 &&
+        (!('teacherUid' in data) || (data.teacherUid is string && data.teacherUid.size() <= 128)) &&
+        (!('teacherUsername' in data) || (data.teacherUsername is string && data.teacherUsername.size() <= 120)) &&
+        data.teacherEmail is string && data.teacherEmail.size() <= 200 &&
+        data.teacherName is string && data.teacherName.size() >= 1 && data.teacherName.size() <= 150 &&
+        (!('teacherNip' in data) || (data.teacherNip is string && data.teacherNip.size() <= 50)) &&
+        data.mataPelajaran is string && data.mataPelajaran.size() >= 1 && data.mataPelajaran.size() <= 150 &&
+        (!('konsentrasiKeahlian' in data) || (data.konsentrasiKeahlian is string && data.konsentrasiKeahlian.size() <= 150)) &&
+        (!('kelasSemester' in data) || (data.kelasSemester is string && data.kelasSemester.size() <= 80)) &&
+        (!('tanggal' in data) || (data.tanggal is string && data.tanggal.size() <= 40)) &&
+        data.tahap in ['PLAN', 'DO', 'SEE'] &&
+        data.status in ['draft', 'in_progress', 'finalized'] &&
+        data.totalNilai is number && data.totalNilai >= 0 && data.totalNilai <= 100 &&
+        data.kategori in ['Sangat Baik', 'Baik', 'Cukup', 'Perlu Perbaikan'] &&
+        data.form1 is map &&
+        data.form2 is map &&
+        data.form3 is map &&
+        data.form4 is map &&
+        data.form5 is map &&
+        data.form6 is map &&
+        data.form7 is map &&
+        data.form8 is map &&
+        data.form9 is map &&
+        data.form10 is map &&
+        data.form12 is map &&
+        data.form13 is map &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isAssignedTeacher(docData) {
+      return isSignedIn() && (
+        docData.createdByUid == request.auth.uid ||
+        ('teacherUid' in docData && docData.teacherUid == request.auth.uid) ||
+        (docData.teacherEmail != '' && docData.teacherEmail == request.auth.token.email)
+      );
+    }
+
+    // --- Collection: users ---
+    match /users/{userId} {
+      allow get: if isValidId(userId) && (isOwner(userId) || isAdmin());
+      allow list: if isAdmin();
+
+      // Hanya Admin yang dapat membuat akun pengguna baru (atau admin utama bootstrap)
+      allow create: if isValidId(userId) &&
+        isAdmin() &&
+        isValidUser(incoming(), userId) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+
+      allow update: if isValidId(userId) &&
+        isSignedIn() &&
+        isValidUser(incoming(), userId) &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().uid == existing().uid &&
+        incoming().updatedAt == request.time &&
+        (
+          isAdmin() ||
+          (
+            isOwner(userId) &&
+            incoming().role == existing().role &&
+            incoming().email == existing().email &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'displayName', 'nip', 'mataPelajaran', 'konsentrasiKeahlian', 'photoURL', 'updatedAt'
+            ])
+          )
+        );
+
+      allow delete: if isValidId(userId) && isAdmin() && userId != request.auth.uid;
+    }
+
+    // --- Collection: admins ---
+    match /admins/{userId} {
+      allow get: if isValidId(userId) && (isOwner(userId) || isAdmin());
+      allow list: if isAdmin();
+      allow create: if isValidId(userId) &&
+        isAdmin() &&
+        isValidAdminRecord(incoming(), userId) &&
+        incoming().createdAt == request.time;
+      allow update: if false;
+      allow delete: if isValidId(userId) && isAdmin() && userId != request.auth.uid;
+    }
+
+    function isValidDirectoryEntry(data, userId) {
+      return data.keys().hasAll(['uid', 'displayName', 'role', 'updatedAt']) &&
+        data.keys().hasOnly([
+          'uid', 'username', 'displayName', 'role', 'nip',
+          'mataPelajaran', 'konsentrasiKeahlian', 'updatedAt'
+        ]) &&
+        data.uid is string && data.uid == userId && data.uid.size() <= 128 &&
+        (!('username' in data) || (data.username is string && data.username.size() <= 120)) &&
+        data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 150 &&
+        data.role in ['admin', 'guru'] &&
+        (!('nip' in data) || (data.nip is string && data.nip.size() <= 50)) &&
+        (!('mataPelajaran' in data) || (data.mataPelajaran is string && data.mataPelajaran.size() <= 150)) &&
+        (!('konsentrasiKeahlian' in data) || (data.konsentrasiKeahlian is string && data.konsentrasiKeahlian.size() <= 150)) &&
+        data.updatedAt is timestamp;
+    }
+
+    // --- Collection: teacher_directory (non-PII directory for Form 1 selection) ---
+    match /teacher_directory/{userId} {
+      allow get: if isValidId(userId) && isSignedIn();
+      allow list: if isSignedIn();
+
+      allow create: if isValidId(userId) &&
+        isAdmin() &&
+        isValidDirectoryEntry(incoming(), userId) &&
+        incoming().updatedAt == request.time;
+
+      allow update: if isValidId(userId) &&
+        isSignedIn() &&
+        isValidDirectoryEntry(incoming(), userId) &&
+        incoming().uid == existing().uid &&
+        incoming().updatedAt == request.time &&
+        (
+          isAdmin() ||
+          (
+            isOwner(userId) &&
+            incoming().role == existing().role &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'displayName', 'nip', 'mataPelajaran', 'konsentrasiKeahlian', 'updatedAt'
+            ])
+          )
+        );
+
+      allow delete: if isValidId(userId) && isAdmin() && userId != request.auth.uid;
+    }
+
+    // --- Collection: supervisions ---
+    match /supervisions/{supervisionId} {
+      allow get: if isValidId(supervisionId) && (isAdmin() || isAssignedTeacher(existing()));
+      allow list: if isSignedIn() && (
+        isAdmin() ||
+        resource.data.createdByUid == request.auth.uid ||
+        resource.data.teacherUid == request.auth.uid ||
+        resource.data.teacherEmail == request.auth.token.email
+      );
+
+      allow create: if isValidId(supervisionId) &&
+        isSignedIn() &&
+        isValidSupervision(incoming(), supervisionId) &&
+        incoming().createdByUid == request.auth.uid &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        (
+          isAdmin() ||
+          incoming().status in ['draft', 'in_progress']
+        );
+
+      allow update: if isValidId(supervisionId) &&
+        isSignedIn() &&
+        isValidSupervision(incoming(), supervisionId) &&
+        incoming().id == existing().id &&
+        incoming().createdByUid == existing().createdByUid &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        (
+          isAdmin() ||
+          (
+            existing().status != 'finalized' &&
+            isAssignedTeacher(existing()) &&
+            incoming().status in ['draft', 'in_progress'] &&
+            (
+              existing().createdByUid == request.auth.uid ||
+              incoming().teacherEmail == existing().teacherEmail
+            ) &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'form1', 'form2', 'form3', 'form4', 'form5', 'form6',
+              'form7', 'form8', 'form9', 'form10', 'form12', 'form13',
+              'totalNilai', 'kategori', 'tahap', 'status',
+              'teacherUid', 'teacherUsername', 'teacherEmail', 'teacherName', 'teacherNip',
+              'mataPelajaran', 'konsentrasiKeahlian', 'kelasSemester', 'tanggal',
+              'updatedAt'
+            ])
+          )
+        );
+
+      allow delete: if isValidId(supervisionId) && isAdmin();
+    }
+  }
+}

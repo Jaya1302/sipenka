@@ -1,0 +1,6 @@
+{
+  "name": "SIPENKA LS — SMKN 13 Bandung",
+  "description": "Sistem Penilaian Kinerja Guru dan Instrumen Supervisi Akademik Berbasis Lesson Study SMKN 13 Bandung dengan dashboard real-time, otentikasi berbasis peran Admin & Guru, serta ekspor laporan PDF dan Excel.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
